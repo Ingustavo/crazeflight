@@ -1,6 +1,3 @@
-<<<<<<< HEAD
-# Cleanflight
-
 ![Cleanflight](docs/assets/cleanflight/cleanflight-logo-light-wide-1-240px.jpg)
 
 Clean-code version of baseflight flight-controller - flight controllers are used to fly multi-rotor craft and fixed wing craft.
@@ -113,6 +110,3 @@ TravisCI is used to run automatic builds: https://travis-ci.org/cleanflight/clea
 
 ## Cleanflight Releases
 https://github.com/cleanflight/cleanflight/releases
-=======
-# crazeflight
->>>>>>> 60a024dabc74dc89961271d66554f4f5f8150dd5
