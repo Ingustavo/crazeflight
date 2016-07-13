@@ -19,9 +19,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include <platform.h>
-
-#ifdef USE_FLASH_M25P16
+#include "platform.h"
 
 #include "drivers/flash_m25p16.h"
 #include "drivers/bus_spi.h"
@@ -310,5 +308,3 @@ const flashGeometry_t* m25p16_getGeometry()
 {
     return &geometry;
 }
-
-#endif

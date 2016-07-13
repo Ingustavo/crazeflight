@@ -44,9 +44,9 @@ void initBoardAlignment(boardAlignment_t *boardAlignment)
     standardBoardAlignment = false;
 
     fp_angles_t rotationAngles;
-    rotationAngles.angles.roll  = degreesToRadians(boardAlignment->rollDegrees );
+    rotationAngles.angles.roll = degreesToRadians(boardAlignment->rollDegrees);
     rotationAngles.angles.pitch = degreesToRadians(boardAlignment->pitchDegrees);
-    rotationAngles.angles.yaw   = degreesToRadians(boardAlignment->yawDegrees  );
+    rotationAngles.angles.yaw = degreesToRadians(boardAlignment->yawDegrees);
 
     buildRotationMatrix(&rotationAngles, boardRotation);
 }
@@ -68,7 +68,6 @@ void alignSensors(int16_t *src, int16_t *dest, uint8_t rotation)
     memcpy(swap, src, sizeof(swap));
 
     switch (rotation) {
-        default:
         case CW0_DEG:
             dest[X] = swap[X];
             dest[Y] = swap[Y];
@@ -108,6 +107,8 @@ void alignSensors(int16_t *src, int16_t *dest, uint8_t rotation)
             dest[X] = -swap[Y];
             dest[Y] = -swap[X];
             dest[Z] = -swap[Z];
+            break;
+        default:
             break;
     }
 

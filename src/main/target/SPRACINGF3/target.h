@@ -30,7 +30,7 @@
 
 #define USABLE_TIMER_CHANNEL_COUNT 17
 
-#define EXTI_CALLBACK_HANDLER_COUNT 2 // MPU data ready and MAG data ready
+#define EXTI15_10_CALLBACK_HANDLER_COUNT 2 // MPU data ready and MAG data ready
 
 #define USE_MPU_DATA_READY_SIGNAL
 #define ENSURE_MPU_DATA_READY_IS_LOW
@@ -145,6 +145,7 @@
 #define LED_STRIP
 #define LED_STRIP_TIMER TIM1
 
+#define USE_LED_STRIP_ON_DMA1_CHANNEL2
 #define WS2811_GPIO                     GPIOA
 #define WS2811_GPIO_AHB_PERIPHERAL      RCC_AHBPeriph_GPIOA
 #define WS2811_GPIO_AF                  GPIO_AF_6
@@ -154,18 +155,13 @@
 #define WS2811_TIMER_APB2_PERIPHERAL    RCC_APB2Periph_TIM1
 #define WS2811_DMA_CHANNEL              DMA1_Channel2
 #define WS2811_IRQ                      DMA1_Channel2_IRQn
-#define WS2811_DMA_TC_FLAG              DMA1_FLAG_TC2
-#define WS2811_DMA_HANDLER_IDENTIFER    DMA1_CH2_HANDLER
 
-
-#define BLACKBOX
-#define ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT
-
-#define DISPLAY
 #define GPS
-#define GTUNE
-#define SERIAL_RX
+#define BLACKBOX
 #define TELEMETRY
+#define SERIAL_RX
+#define AUTOTUNE
+#define DISPLAY
 #define USE_SERVOS
 #define USE_CLI
 
@@ -173,10 +169,3 @@
 // USART3,
 #define BIND_PORT  GPIOB
 #define BIND_PIN   Pin_11
-
-#define USE_SERIAL_1WIRE
-
-#define S1W_TX_GPIO         GPIOA
-#define S1W_TX_PIN          GPIO_Pin_9
-#define S1W_RX_GPIO         GPIOA
-#define S1W_RX_PIN          GPIO_Pin_10

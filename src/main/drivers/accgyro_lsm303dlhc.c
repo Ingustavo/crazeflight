@@ -18,7 +18,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include <platform.h>
+#include "platform.h"
 #include "build_config.h"
 #include "debug.h"
 
@@ -131,15 +131,14 @@ void lsm303dlhcAccInit(void)
 }
 
 // Read 3 gyro values into user-provided buffer. No overrun checking is done.
-static bool lsm303dlhcAccRead(int16_t *gyroADC)
+static void lsm303dlhcAccRead(int16_t *gyroADC)
 {
     uint8_t buf[6];
 
-    bool ack = i2cRead(LSM303DLHC_ACCEL_ADDRESS, AUTO_INCREMENT_ENABLE | OUT_X_L_A, 6, buf);
+    bool ok = i2cRead(LSM303DLHC_ACCEL_ADDRESS, AUTO_INCREMENT_ENABLE | OUT_X_L_A, 6, buf);
 
-    if (!ack) {
-        return false;
-    }
+    if (!ok)
+        return;
 
     // the values range from -8192 to +8191
     gyroADC[X] = (int16_t)((buf[1] << 8) | buf[0]) / 2;
@@ -151,8 +150,6 @@ static bool lsm303dlhcAccRead(int16_t *gyroADC)
     debug[1] = (int16_t)((buf[3] << 8) | buf[2]);
     debug[2] = (int16_t)((buf[5] << 8) | buf[4]);
 #endif
-
-    return true;
 }
 
 bool lsm303dlhcAccDetect(acc_t *acc)

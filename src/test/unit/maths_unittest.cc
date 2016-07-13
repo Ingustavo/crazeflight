@@ -20,8 +20,6 @@
 
 #include <limits.h>
 
-#include <math.h>
-
 #define BARO
 
 extern "C" {
@@ -75,33 +73,33 @@ TEST(MathsUnittest, TestConstrainNegatives)
 TEST(MathsUnittest, TestConstrainf)
 {
     // Within bounds.
-    EXPECT_FLOAT_EQ(constrainf(1.0f, 0.0f, 2.0f), 1.0f);
+    EXPECT_EQ(constrainf(1.0f, 0.0f, 2.0f), 1.0f);
 
     // Equal to bottom bound.
-    EXPECT_FLOAT_EQ(constrainf(1.0f, 1.0f, 2.0f), 1.0f);
+    EXPECT_EQ(constrainf(1.0f, 1.0f, 2.0f), 1.0f);
     // Equal to top bound.
-    EXPECT_FLOAT_EQ(constrainf(1.0f, 0.0f, 1.0f), 1.0f);
+    EXPECT_EQ(constrainf(1.0f, 0.0f, 1.0f), 1.0f);
 
     // Equal to both bottom and top bound.
-    EXPECT_FLOAT_EQ(constrainf(1.0f, 1.0f, 1.0f), 1.0f);
+    EXPECT_EQ(constrainf(1.0f, 1.0f, 1.0f), 1.0f);
 
     // Above top bound.
-    EXPECT_FLOAT_EQ(constrainf(2.0f, 0.0f, 1.0f), 1.0f);
+    EXPECT_EQ(constrainf(2.0f, 0.0f, 1.0f), 1.0f);
     // Below bottom bound.
-    EXPECT_FLOAT_EQ(constrainf(0, 1.0f, 2.0f), 1.0f);
+    EXPECT_EQ(constrainf(0, 1.0f, 2.0f), 1.0f);
 
     // Above bouth bounds.
-    EXPECT_FLOAT_EQ(constrainf(2.0f, 0.0f, 1.0f), 1.0f);
+    EXPECT_EQ(constrainf(2.0f, 0.0f, 1.0f), 1.0f);
     // Below bouth bounds.
-    EXPECT_FLOAT_EQ(constrainf(0, 1.0f, 2.0f), 1.0f);
+    EXPECT_EQ(constrainf(0, 1.0f, 2.0f), 1.0f);
 }
 
 TEST(MathsUnittest, TestDegreesToRadians)
 {
-    EXPECT_FLOAT_EQ(degreesToRadians(0), 0.0f);
-    EXPECT_FLOAT_EQ(degreesToRadians(90), 0.5f * M_PIf);
-    EXPECT_FLOAT_EQ(degreesToRadians(180), M_PIf);
-    EXPECT_FLOAT_EQ(degreesToRadians(-180), - M_PIf);
+    EXPECT_EQ(degreesToRadians(0), 0.0f);
+    EXPECT_EQ(degreesToRadians(90), 0.5f * M_PIf);
+    EXPECT_EQ(degreesToRadians(180), M_PIf);
+    EXPECT_EQ(degreesToRadians(-180), - M_PIf);
 }
 
 TEST(MathsUnittest, TestApplyDeadband)
@@ -120,9 +118,9 @@ TEST(MathsUnittest, TestApplyDeadband)
 
 void expectVectorsAreEqual(struct fp_vector *a, struct fp_vector *b)
 {
-    EXPECT_FLOAT_EQ(a->X, b->X);
-    EXPECT_FLOAT_EQ(a->Y, b->Y);
-    EXPECT_FLOAT_EQ(a->Z, b->Z);
+    EXPECT_EQ(a->X, b->X);
+    EXPECT_EQ(a->Y, b->Y);
+    EXPECT_EQ(a->Z, b->Z);
 }
 
 TEST(MathsUnittest, TestRotateVectorWithNoAngle)
@@ -147,52 +145,3 @@ TEST(MathsUnittest, TestRotateVectorAroundAxis)
 
     expectVectorsAreEqual(&vector, &expected_result);
 }
-
-#if defined(FAST_MATH) || defined(VERY_FAST_MATH)
-TEST(MathsUnittest, TestFastTrigonometrySinCos)
-{
-    double sinError = 0;
-    for (float x = -10 * M_PI; x < 10 * M_PI; x += M_PI / 300) {
-        double approxResult = sin_approx(x);
-        double libmResult = sinf(x);
-        sinError = MAX(sinError, fabs(approxResult - libmResult));
-    }
-    printf("sin_approx maximum absolute error = %e\n", sinError);
-    EXPECT_LE(sinError, 3e-6);
-
-    double cosError = 0;
-    for (float x = -10 * M_PI; x < 10 * M_PI; x += M_PI / 300) {
-        double approxResult = cos_approx(x);
-        double libmResult = cosf(x);
-        cosError = MAX(cosError, fabs(approxResult - libmResult));
-    }
-    printf("cos_approx maximum absolute error = %e\n", cosError);
-    EXPECT_LE(cosError, 3e-6);
-}
-
-TEST(MathsUnittest, TestFastTrigonometryATan2)
-{
-    double error = 0;
-    for (float x = -1.0f; x < 1.0f; x += 0.01) {
-        for (float y = -1.0f; x < 1.0f; x += 0.001) {
-            double approxResult = atan2_approx(y, x);
-            double libmResult = atan2f(y, x);
-            error = MAX(error, fabs(approxResult - libmResult));
-        }
-    }
-    printf("atan2_approx maximum absolute error = %e rads (%e degree)\n", error, error / M_PI * 180.0f);
-    EXPECT_LE(error, 1e-6);
-}
-
-TEST(MathsUnittest, TestFastTrigonometryACos)
-{
-    double error = 0;
-    for (float x = -1.0f; x < 1.0f; x += 0.001) {
-        double approxResult = acos_approx(x);
-        double libmResult = acos(x);
-        error = MAX(error, fabs(approxResult - libmResult));
-    }
-    printf("acos_approx maximum absolute error = %e rads (%e degree)\n", error, error / M_PI * 180.0f);
-    EXPECT_LE(error, 1e-4);
-}
-#endif

@@ -22,7 +22,7 @@
 #include <string.h>
 #include <math.h>
 
-#include <platform.h>
+#include "platform.h"
 #include "build_config.h"
 #include "debug.h"
 
@@ -90,8 +90,6 @@ uint8_t GPS_svinfo_cno[GPS_SV_MAXSATS];     // Carrier to Noise Ratio (Signal St
 
 static gpsConfig_t *gpsConfig;
 
-uint32_t GPS_garbageByteCount = 0;
-
 // GPS timeout for wrong baud rate/disconnection/etc in milliseconds (default 2.5second)
 #define GPS_TIMEOUT (2500)
 // How many entries in gpsInitData array below
@@ -101,7 +99,7 @@ uint32_t GPS_garbageByteCount = 0;
 static serialConfig_t *serialConfig;
 static serialPort_t *gpsPort;
 
-typedef struct gpsInitData_s {
+typedef struct gpsInitData_t {
     uint8_t index;
     uint8_t baudrateIndex; // see baudRate_e
     const char *ubx;
@@ -240,7 +238,7 @@ void gpsInit(serialConfig_t *initialSerialConfig, gpsConfig_t *initialGpsConfig)
     portMode_t mode = MODE_RXTX;
     // only RX is needed for NMEA-style GPS
     if (gpsConfig->provider == GPS_NMEA)
-	    mode &= ~MODE_TX;
+        mode &= ~MODE_TX;
 
     // no callback - buffer will be consumed in gpsThread()
     gpsPort = openSerialPort(gpsPortConfig->identifier, FUNCTION_GPS, NULL, gpsInitData[gpsData.baudrateIndex].baudrateIndex, mode, SERIAL_NOT_INVERTED);
@@ -362,7 +360,7 @@ void gpsThread(void)
 {
     // read out available GPS bytes
     if (gpsPort) {
-        while (serialRxBytesWaiting(gpsPort))
+        while (serialTotalBytesWaiting(gpsPort))
             gpsNewData(serialRead(gpsPort));
     }
 
@@ -844,8 +842,7 @@ static bool _new_speed;
 
 // from the UBlox6 document, the largest payout we receive i the NAV-SVINFO and the payload size
 // is calculated as 8 + 12*numCh.  numCh in the case of a Glonass receiver is 28.
-#define MAX_UBLOX_PAYLOAD_SIZE 344
-#define UBLOX_BUFFER_SIZE MAX_UBLOX_PAYLOAD_SIZE
+#define UBLOX_PAYLOAD_SIZE 344
 
 
 // Receive buffer
@@ -855,7 +852,7 @@ static union {
     ubx_nav_solution solution;
     ubx_nav_velned velned;
     ubx_nav_svinfo svinfo;
-    uint8_t bytes[UBLOX_BUFFER_SIZE];
+    uint8_t bytes[UBLOX_PAYLOAD_SIZE];
 } _buffer;
 
 void _update_checksum(uint8_t *data, uint8_t len, uint8_t *ck_a, uint8_t *ck_b)
@@ -944,8 +941,6 @@ static bool gpsNewFrameUBLOX(uint8_t data)
             if (PREAMBLE1 == data) {
                 _skip_packet = false;
                 _step++;
-            } else {
-                GPS_garbageByteCount++;
             }
             break;
         case 1: // Sync char 2 (0x62)
@@ -973,38 +968,23 @@ static bool gpsNewFrameUBLOX(uint8_t data)
         case 5: // Payload length (part 2)
             _step++;
             _ck_b += (_ck_a += data);       // checksum byte
-            _payload_length |= (uint16_t)(data << 8);
-
-            if (_payload_length > MAX_UBLOX_PAYLOAD_SIZE ) {
-                // we can't receive the whole packet, just log the error and start searching for the next packet.
-                shiftPacketLog();
-                *gpsPacketLogChar = LOG_SKIPPED;
-                gpsData.errors++;
-                _step = 0;
-                break;
-            }
-
-            if (_payload_length > UBLOX_BUFFER_SIZE) {
+            _payload_length += (uint16_t)(data << 8);
+            if (_payload_length > UBLOX_PAYLOAD_SIZE) {
                 _skip_packet = true;
             }
-
-            // prepare to receive payload
-            _payload_counter = 0;
-
+            _payload_counter = 0;   // prepare to receive payload
             if (_payload_length == 0) {
                 _step = 7;
             }
             break;
         case 6:
             _ck_b += (_ck_a += data);       // checksum byte
-            if (_payload_counter < UBLOX_BUFFER_SIZE) {
+            if (_payload_counter < UBLOX_PAYLOAD_SIZE) {
                 _buffer.bytes[_payload_counter] = data;
             }
-            // NOTE: check counter BEFORE increasing so that a payload_size of 65535 is correctly handled.  This can happen if garbage data is received.
-            if (_payload_counter ==  _payload_length - 1) {
+            if (++_payload_counter >= _payload_length) {
                 _step++;
             }
-            _payload_counter++;
             break;
         case 7:
             _step++;
@@ -1056,17 +1036,16 @@ void gpsEnablePassthrough(serialPort_t *gpsPassthroughPort)
 #endif
     char c;
     while(1) {
-        if (serialRxBytesWaiting(gpsPort)) {
+        if (serialTotalBytesWaiting(gpsPort)) {
             LED0_ON;
             c = serialRead(gpsPort);
             gpsNewData(c);
             serialWrite(gpsPassthroughPort, c);
             LED0_OFF;
         }
-        if (serialRxBytesWaiting(gpsPassthroughPort)) {
+        if (serialTotalBytesWaiting(gpsPassthroughPort)) {
             LED1_ON;
-            c = serialRead(gpsPassthroughPort);
-            serialWrite(gpsPort, c);
+            serialWrite(gpsPort, serialRead(gpsPassthroughPort));
             LED1_OFF;
         }
 #ifdef DISPLAY

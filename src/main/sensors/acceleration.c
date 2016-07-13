@@ -18,20 +18,17 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include <platform.h>
+#include "platform.h"
 
 #include "common/axis.h"
 
 #include "drivers/sensor.h"
 #include "drivers/accgyro.h"
 
-#include "io/rc_controls.h"
-#include "io/beeper.h"
-
 #include "sensors/battery.h"
 #include "sensors/sensors.h"
+#include "io/beeper.h"
 #include "sensors/boardalignment.h"
-
 #include "config/runtime_config.h"
 #include "config/config.h"
 
@@ -174,9 +171,7 @@ void applyAccelerationTrims(flightDynamicsTrims_t *accelerationTrims)
 
 void updateAccelerationReadings(rollAndPitchTrims_t *rollAndPitchTrims)
 {
-    if (!acc.read(accADC)) {
-        return;
-    }
+    acc.read(accADC);
     alignSensors(accADC, accADC, accAlign);
 
     if (!isAccelerationCalibrationComplete()) {

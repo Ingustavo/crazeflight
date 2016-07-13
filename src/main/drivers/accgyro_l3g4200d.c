@@ -54,10 +54,12 @@
 #define L3G4200D_DLPF_78HZ       0x80
 #define L3G4200D_DLPF_93HZ       0xC0
 
-static void l3g4200dInit(uint8_t lpf);
-static bool l3g4200dRead(int16_t *gyroADC);
+static uint8_t mpuLowPassFilter = L3G4200D_DLPF_32HZ;
 
-bool l3g4200dDetect(gyro_t *gyro)
+static void l3g4200dInit(void);
+static void l3g4200dRead(int16_t *gyroADC);
+
+bool l3g4200dDetect(gyro_t *gyro, uint16_t lpf)
 {
     uint8_t deviceid;
 
@@ -73,54 +75,48 @@ bool l3g4200dDetect(gyro_t *gyro)
     // 14.2857dps/lsb scalefactor
     gyro->scale = 1.0f / 14.2857f;
 
-    return true;
-}
-
-static void l3g4200dInit(uint8_t lpf)
-{
-    bool ack;
-
-    uint8_t mpuLowPassFilter = L3G4200D_DLPF_32HZ;
-
-    // Conversion from MPU6XXX LPF values
+    // default LPF is set to 32Hz
     switch (lpf) {
         default:
-        case 3:
+            case 32:
             mpuLowPassFilter = L3G4200D_DLPF_32HZ;
             break;
-        case 4:
+        case 54:
             mpuLowPassFilter = L3G4200D_DLPF_54HZ;
             break;
-        case 5:
+        case 78:
             mpuLowPassFilter = L3G4200D_DLPF_78HZ;
             break;
-        case 6:
+        case 93:
             mpuLowPassFilter = L3G4200D_DLPF_93HZ;
             break;
     }
+
+    return true;
+}
+
+static void l3g4200dInit(void)
+{
+    bool ack;
 
     delay(100);
 
     ack = i2cWrite(L3G4200D_ADDRESS, L3G4200D_CTRL_REG4, L3G4200D_FS_SEL_2000DPS);
     if (!ack)
-        failureMode(FAILURE_ACC_INIT);
+        failureMode(3);
 
     delay(5);
     i2cWrite(L3G4200D_ADDRESS, L3G4200D_CTRL_REG1, L3G4200D_POWER_ON | mpuLowPassFilter);
 }
 
 // Read 3 gyro values into user-provided buffer. No overrun checking is done.
-static bool l3g4200dRead(int16_t *gyroADC)
+static void l3g4200dRead(int16_t *gyroADC)
 {
     uint8_t buf[6];
 
-    if (!i2cRead(L3G4200D_ADDRESS, L3G4200D_AUTOINCR | L3G4200D_GYRO_OUT, 6, buf)) {
-        return false;
-    }
+    i2cRead(L3G4200D_ADDRESS, L3G4200D_AUTOINCR | L3G4200D_GYRO_OUT, 6, buf);
 
     gyroADC[X] = (int16_t)((buf[0] << 8) | buf[1]);
     gyroADC[Y] = (int16_t)((buf[2] << 8) | buf[3]);
     gyroADC[Z] = (int16_t)((buf[4] << 8) | buf[5]);
-
-    return true;
 }

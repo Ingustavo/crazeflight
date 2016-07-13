@@ -19,8 +19,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#include <platform.h>
-#include "debug.h"
+#include "platform.h"
 
 #include "drivers/gpio.h"
 #include "drivers/system.h"
@@ -43,7 +42,6 @@
 #define SPEKTRUM_1024_CHANNEL_COUNT 7
 
 #define SPEK_FRAME_SIZE 16
-#define SPEKTRUM_NEEDED_FRAME_INTERVAL 5000
 
 #define SPEKTRUM_BAUDRATE 115200
 
@@ -96,25 +94,20 @@ bool spektrumInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcRe
 // Receive ISR callback
 static void spektrumDataReceive(uint16_t c)
 {
-    uint32_t spekTime, spekTimeInterval;
-    static uint32_t spekTimeLast = 0;
-    static uint8_t spekFramePosition = 0;
+    uint32_t spekTime;
+    static uint32_t spekTimeLast, spekTimeInterval;
+    static uint8_t spekFramePosition;
 
     spekTime = micros();
     spekTimeInterval = spekTime - spekTimeLast;
     spekTimeLast = spekTime;
-
-    if (spekTimeInterval > SPEKTRUM_NEEDED_FRAME_INTERVAL) {
+    if (spekTimeInterval > 5000)
         spekFramePosition = 0;
-    }
-
-    if (spekFramePosition < SPEK_FRAME_SIZE) {
-        spekFrame[spekFramePosition++] = (uint8_t)c;
-        if (spekFramePosition == SPEK_FRAME_SIZE) {
-            rcFrameComplete = true;
-        } else {
-            rcFrameComplete = false;
-        }
+    spekFrame[spekFramePosition] = (uint8_t)c;
+    if (spekFramePosition == SPEK_FRAME_SIZE - 1) {
+        rcFrameComplete = true;
+    } else {
+        spekFramePosition++;
     }
 }
 

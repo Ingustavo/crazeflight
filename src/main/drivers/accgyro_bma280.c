@@ -33,7 +33,7 @@
 #define BMA280_PMU_RANGE   0x0F
 
 static void bma280Init(void);
-static bool bma280Read(int16_t *accelData);
+static void bma280Read(int16_t *accelData);
 
 bool bma280Detect(acc_t *acc)
 {
@@ -57,18 +57,14 @@ static void bma280Init(void)
     acc_1G = 512 * 8;
 }
 
-static bool bma280Read(int16_t *accelData)
+static void bma280Read(int16_t *accelData)
 {
     uint8_t buf[6];
 
-    if (!i2cRead(BMA280_ADDRESS, BMA280_ACC_X_LSB, 6, buf)) {
-        return false;
-    }
+    i2cRead(BMA280_ADDRESS, BMA280_ACC_X_LSB, 6, buf);
 
     // Data format is lsb<5:0><crap><new_data_bit> | msb<13:6>
     accelData[0] = (int16_t)((buf[0] >> 2) + (buf[1] << 8));
     accelData[1] = (int16_t)((buf[2] >> 2) + (buf[3] << 8));
     accelData[2] = (int16_t)((buf[4] >> 2) + (buf[5] << 8));
-
-    return true;
 }

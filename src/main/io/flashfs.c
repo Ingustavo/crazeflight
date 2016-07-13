@@ -114,33 +114,17 @@ uint32_t flashfsGetSize()
     return m25p16_getGeometry()->totalSize;
 }
 
+const flashGeometry_t* flashfsGetGeometry()
+{
+    return m25p16_getGeometry();
+}
+
 static uint32_t flashfsTransmitBufferUsed()
 {
     if (bufferHead >= bufferTail)
         return bufferHead - bufferTail;
 
     return FLASHFS_WRITE_BUFFER_SIZE - bufferTail + bufferHead;
-}
-
-/**
- * Get the size of the largest single write that flashfs could ever accept without blocking or data loss.
- */
-uint32_t flashfsGetWriteBufferSize()
-{
-    return FLASHFS_WRITE_BUFFER_USABLE;
-}
-
-/**
- * Get the number of bytes that can currently be written to flashfs without any blocking or data loss.
- */
-uint32_t flashfsGetWriteBufferFreeSpace()
-{
-    return flashfsGetWriteBufferSize() - flashfsTransmitBufferUsed();
-}
-
-const flashGeometry_t* flashfsGetGeometry()
-{
-    return m25p16_getGeometry();
 }
 
 /**
@@ -497,7 +481,7 @@ int flashfsIdentifyStartOfFreeSpace()
         /* We can choose whatever power of 2 size we like, which determines how much wastage of free space we'll have
          * at the end of the last written data. But smaller blocksizes will require more searching.
          */
-        FREE_BLOCK_SIZE = 2048,
+        FREE_BLOCK_SIZE = 65536,
 
         /* We don't expect valid data to ever contain this many consecutive uint32_t's of all 1 bits: */
         FREE_BLOCK_TEST_SIZE_INTS = 4, // i.e. 16 bytes
@@ -509,20 +493,16 @@ int flashfsIdentifyStartOfFreeSpace()
         uint32_t ints[FREE_BLOCK_TEST_SIZE_INTS];
     } testBuffer;
 
-    int left = 0; // Smallest block index in the search region
-    int right = flashfsGetSize() / FREE_BLOCK_SIZE; // One past the largest block index in the search region
-    int mid;
-    int result = right;
+    int left = 0;
+    int right = flashfsGetSize() / FREE_BLOCK_SIZE;
+    int mid, result = right;
     int i;
     bool blockErased;
 
     while (left < right) {
         mid = (left + right) / 2;
 
-        if (m25p16_readBytes(mid * FREE_BLOCK_SIZE, testBuffer.bytes, FREE_BLOCK_TEST_SIZE_BYTES) < FREE_BLOCK_TEST_SIZE_BYTES) {
-            // Unexpected timeout from flash, so bail early (reporting the device fuller than it really is)
-            break;
-        }
+        m25p16_readBytes(mid * FREE_BLOCK_SIZE, testBuffer.bytes, FREE_BLOCK_TEST_SIZE_BYTES);
 
         // Checking the buffer 4 bytes at a time like this is probably faster than byte-by-byte, but I didn't benchmark it :)
         blockErased = true;

@@ -56,24 +56,21 @@
 #define NAZE_SPI_INSTANCE     SPI2
 #define NAZE_SPI_CS_GPIO      GPIOB
 #define NAZE_SPI_CS_PIN       GPIO_Pin_12
-#define NAZE_CS_GPIO_CLK_PERIPHERAL RCC_APB2Periph_GPIOB
 
 // We either have this 16mbit flash chip on SPI or the MPU6500 acc/gyro depending on board revision:
 #define M25P16_CS_GPIO        NAZE_SPI_CS_GPIO
 #define M25P16_CS_PIN         NAZE_SPI_CS_PIN
 #define M25P16_SPI_INSTANCE   NAZE_SPI_INSTANCE
 
-#define MPU6500_CS_GPIO_CLK_PERIPHERAL   NAZE_CS_GPIO_CLK_PERIPHERAL
-#define MPU6500_CS_GPIO                  NAZE_SPI_CS_GPIO
-#define MPU6500_CS_PIN                   NAZE_SPI_CS_PIN
-#define MPU6500_SPI_INSTANCE             NAZE_SPI_INSTANCE
-
+#define MPU6500_CS_GPIO       NAZE_SPI_CS_GPIO
+#define MPU6500_CS_PIN        NAZE_SPI_CS_PIN
+#define MPU6500_SPI_INSTANCE  NAZE_SPI_INSTANCE
 
 #define USE_FLASHFS
 
 #define USE_FLASH_M25P16
 
-#define EXTI_CALLBACK_HANDLER_COUNT 3 // MPU data ready, MAG data ready, BMP085 EOC
+#define EXTI15_10_CALLBACK_HANDLER_COUNT 3 // MPU data ready, MAG data ready, BMP085 EOC
 
 //#define DEBUG_MPU_DATA_READY_INTERRUPT
 #define USE_MPU_DATA_READY_SIGNAL
@@ -84,32 +81,29 @@
 #define GYRO
 #define USE_GYRO_MPU3050
 #define USE_GYRO_MPU6050
-#define USE_GYRO_MPU6500
 #define USE_GYRO_SPI_MPU6500
 
 
 #define GYRO_MPU3050_ALIGN CW0_DEG
 #define GYRO_MPU6050_ALIGN CW0_DEG
-#define GYRO_MPU6500_ALIGN CW0_DEG
+#define GYRO_SPI_MPU6500_ALIGN CW0_DEG
 
 #define ACC
 #define USE_ACC_ADXL345
 #define USE_ACC_BMA280
 #define USE_ACC_MMA8452
 #define USE_ACC_MPU6050
-#define USE_ACC_MPU6500
 #define USE_ACC_SPI_MPU6500
 
 #define ACC_ADXL345_ALIGN CW270_DEG
 #define ACC_MPU6050_ALIGN CW0_DEG
 #define ACC_MMA8452_ALIGN CW90_DEG
 #define ACC_BMA280_ALIGN CW0_DEG
-#define ACC_MPU6500_ALIGN CW0_DEG
+#define ACC_SPI_MPU6500_ALIGN CW0_DEG
 
 #define BARO
 #define USE_BARO_MS5611
 #define USE_BARO_BMP085
-#define USE_BARO_BMP280
 
 #define MAG
 #define USE_MAG_HMC5883
@@ -169,17 +163,15 @@
 #define EXTERNAL1_ADC_GPIO_PIN      GPIO_Pin_5
 #define EXTERNAL1_ADC_CHANNEL       ADC_Channel_5
 
+#define GPS
 
 #define LED_STRIP
 #define LED_STRIP_TIMER TIM3
-#define WS2811_DMA_TC_FLAG           DMA1_FLAG_TC6
-#define WS2811_DMA_HANDLER_IDENTIFER DMA1_CH6_HANDLER
 
-#define GPS
-#define GTUNE
 #define BLACKBOX
 #define TELEMETRY
 #define SERIAL_RX
+#define AUTOTUNE
 #define USE_SERVOS
 #define USE_CLI
 
@@ -187,15 +179,6 @@
 // USART2, PA3
 #define BIND_PORT  GPIOA
 #define BIND_PIN   Pin_3
-
-#define USE_SERIAL_1WIRE
-
-// STM32F103CBT6-LQFP48 Pin30 (PA9) TX - PC3 connects to onboard CP2102 RX
-#define S1W_TX_GPIO         GPIOA
-#define S1W_TX_PIN          GPIO_Pin_9
-// STM32F103CBT6-LQFP48 Pin31 (PA10) RX - PC1 to onboard CP2102 TX
-#define S1W_RX_GPIO         GPIOA
-#define S1W_RX_PIN          GPIO_Pin_10
 
 // alternative defaults for AlienWii32 F1 target
 #ifdef ALIENWII32

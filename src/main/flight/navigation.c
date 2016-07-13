@@ -22,7 +22,7 @@
 #include <string.h>
 #include <math.h>
 
-#include <platform.h>
+#include "platform.h"
 #include "debug.h"
 
 #include "common/maths.h"
@@ -33,12 +33,8 @@
 #include "drivers/serial_uart.h"
 #include "drivers/gpio.h"
 #include "drivers/light_led.h"
-#include "drivers/sensor.h"
-#include "drivers/accgyro.h"
 
 #include "sensors/sensors.h"
-#include "sensors/boardalignment.h"
-#include "sensors/acceleration.h"
 
 #include "io/beeper.h"
 #include "io/serial.h"
@@ -48,7 +44,6 @@
 #include "flight/pid.h"
 #include "flight/navigation.h"
 #include "flight/gps_conversion.h"
-#include "flight/imu.h"
 
 #include "rx/rx.h"
 
@@ -364,7 +359,7 @@ void GPS_reset_home_position(void)
         GPS_home[LAT] = GPS_coord[LAT];
         GPS_home[LON] = GPS_coord[LON];
         GPS_calc_longitude_scaling(GPS_coord[LAT]); // need an initial value for distance and bearing calc
-        nav_takeoff_bearing = DECIDEGREES_TO_DEGREES(attitude.values.yaw);              // save takeoff heading
+        nav_takeoff_bearing = heading;              // save takeoff heading
         // Set ground altitude
         ENABLE_STATE(GPS_FIX_HOME);
     }
@@ -418,7 +413,7 @@ void gpsUsePIDs(pidProfile_t *pidProfile)
 static void GPS_calc_longitude_scaling(int32_t lat)
 {
     float rads = (ABS((float)lat) / 10000000.0f) * 0.0174532925f;
-    GPS_scaleLonDown = cos_approx(rads);
+    GPS_scaleLonDown = cosf(rads);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
@@ -461,7 +456,7 @@ static void GPS_distance_cm_bearing(int32_t *currentLat1, int32_t *currentLon1, 
     float dLon = (float)(*destinationLon2 - *currentLon1) * GPS_scaleLonDown;
     *dist = sqrtf(sq(dLat) + sq(dLon)) * DISTANCE_BETWEEN_TWO_LONGITUDE_POINTS_AT_EQUATOR_IN_HUNDREDS_OF_KILOMETERS;
 
-    *bearing = 9000.0f + atan2_approx(-dLat, dLon) * TAN_89_99_DEGREES;      // Convert the output radians to 100xdeg
+    *bearing = 9000.0f + atan2f(-dLat, dLon) * TAN_89_99_DEGREES;      // Convert the output radians to 100xdeg
     if (*bearing < 0)
         *bearing += 36000;
 }
@@ -564,8 +559,8 @@ static void GPS_calc_nav_rate(uint16_t max_speed)
 
     // nav_bearing includes crosstrack
     temp = (9000l - nav_bearing) * RADX100;
-    trig[GPS_X] = cos_approx(temp);
-    trig[GPS_Y] = sin_approx(temp);
+    trig[GPS_X] = cosf(temp);
+    trig[GPS_Y] = sinf(temp);
 
     for (axis = 0; axis < 2; axis++) {
         rate_error[axis] = (trig[axis] * max_speed) - actual_speed[axis];
@@ -588,7 +583,7 @@ static void GPS_update_crosstrack(void)
 {
     if (ABS(wrap_18000(target_bearing - original_target_bearing)) < 4500) {     // If we are too far off or too close we don't do track following
         float temp = (target_bearing - original_target_bearing) * RADX100;
-        crosstrack_error = sin_approx(temp) * (wp_distance * CROSSTRACK_GAIN); // Meters we are off track line
+        crosstrack_error = sinf(temp) * (wp_distance * CROSSTRACK_GAIN); // Meters we are off track line
         nav_bearing = target_bearing + constrain(crosstrack_error, -3000, 3000);
         nav_bearing = wrap_36000(nav_bearing);
     } else {
@@ -649,8 +644,8 @@ static int32_t wrap_36000(int32_t angle)
 
 void updateGpsStateForHomeAndHoldMode(void)
 {
-    float sin_yaw_y = sin_approx(DECIDEGREES_TO_DEGREES(attitude.values.yaw) * 0.0174532925f);
-    float cos_yaw_x = cos_approx(DECIDEGREES_TO_DEGREES(attitude.values.yaw) * 0.0174532925f);
+    float sin_yaw_y = sinf(heading * 0.0174532925f);
+    float cos_yaw_x = cosf(heading * 0.0174532925f);
     if (gpsProfile->nav_slew_rate) {
         nav_rated[LON] += constrain(wrap_18000(nav[LON] - nav_rated[LON]), -gpsProfile->nav_slew_rate, gpsProfile->nav_slew_rate); // TODO check this on uint8
         nav_rated[LAT] += constrain(wrap_18000(nav[LAT] - nav_rated[LAT]), -gpsProfile->nav_slew_rate, gpsProfile->nav_slew_rate);

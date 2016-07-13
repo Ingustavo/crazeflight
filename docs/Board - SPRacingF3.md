@@ -1,8 +1,6 @@
-# Board - Seriously Pro SP Racing F3
+# Board - SPRacingF3
 
-The Seriously Pro Racing F3 board (SPRacingF3) is the first board designed specifically for Cleanflight.
-
-Purchasing boards directly from SeriouslyPro / SP Racing and official retailers helps fund Cleanflight development, it's the reason the Seriously Pro boards exist!  Official retailers are always listed on the SeriouslyPro.com website.
+The Seriously Pro Racing MOF3 board (SPRacingF3) is the first board designed specifically for Cleanflight.
 
 Full details available on the website, here:
 
@@ -89,7 +87,7 @@ The 8 pin IO_2 connector has the following pinouts when used in RX_PARALLEL_PWM 
 When RX_PPM/RX_SERIAL is used the IO_2 pinout is as follows.
 
 | Pin | Function                  | Notes                                        |
-| --- | ------------------------- | -------------------------------------------- |
+| --- | --------00000000000------ | -------------------------------------------- |
 | 1   | Ground                    |                                              |
 | 2   | VCC_IN                    | Voltage as-supplied by BEC.                  |
 | 3   | RX_SERIAL                 | UART3 RX                                     |
@@ -124,7 +122,7 @@ The port cannot be used at the same time as UART2.
 | Pin | Function       | Notes                                        |
 | --- | -------------- | -------------------------------------------- |
 | 1   | Ground         |                                              |
-| 2   | NRST           |                                              |
+| 2   | NRST           | Voltage as-supplied by BEC OR USB, always on |
 | 3   | SWDIO          |                                              |
 | 4   | SWDCLK         |                                              |
 

@@ -20,7 +20,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#include <platform.h>
+#include "platform.h"
 
 #include "build_config.h"
 
@@ -31,71 +31,46 @@
 
 #include "system.h"
 
-#ifndef EXTI_CALLBACK_HANDLER_COUNT
-#define EXTI_CALLBACK_HANDLER_COUNT 1
+
+#ifndef EXTI15_10_CALLBACK_HANDLER_COUNT
+#define EXTI15_10_CALLBACK_HANDLER_COUNT 1
 #endif
 
-typedef struct extiCallbackHandlerConfig_s {
-    IRQn_Type irqn;
-    extiCallbackHandlerFunc* fn;
-} extiCallbackHandlerConfig_t;
+static extiCallbackHandler* exti15_10_handlers[EXTI15_10_CALLBACK_HANDLER_COUNT];
 
-static extiCallbackHandlerConfig_t extiHandlerConfigs[EXTI_CALLBACK_HANDLER_COUNT];
-
-void registerExtiCallbackHandler(IRQn_Type irqn, extiCallbackHandlerFunc *fn)
+void registerExti15_10_CallbackHandler(extiCallbackHandler *fn)
 {
-    for (int index = 0; index < EXTI_CALLBACK_HANDLER_COUNT; index++) {
-        extiCallbackHandlerConfig_t *candidate = &extiHandlerConfigs[index];
-        if (!candidate->fn) {
-            candidate->fn = fn;
-            candidate->irqn = irqn;
+    for (int index = 0; index < EXTI15_10_CALLBACK_HANDLER_COUNT; index++) {
+        extiCallbackHandler *candidate = exti15_10_handlers[index];
+        if (!candidate) {
+            exti15_10_handlers[index] = fn;
             return;
         }
     }
-    failureMode(FAILURE_DEVELOPER); // EXTI_CALLBACK_HANDLER_COUNT is too low for the amount of handlers required.
+    failureMode(15); // EXTI15_10_CALLBACK_HANDLER_COUNT is too low for the amount of handlers required.
 }
 
-void unregisterExtiCallbackHandler(IRQn_Type irqn, extiCallbackHandlerFunc *fn)
+void unregisterExti15_10_CallbackHandler(extiCallbackHandler *fn)
 {
-    for (int index = 0; index < EXTI_CALLBACK_HANDLER_COUNT; index++) {
-        extiCallbackHandlerConfig_t *candidate = &extiHandlerConfigs[index];
-        if (candidate->fn == fn && candidate->irqn == irqn) {
-            candidate->fn = NULL;
-            candidate->irqn = 0;
+    for (int index = 0; index < EXTI15_10_CALLBACK_HANDLER_COUNT; index++) {
+        extiCallbackHandler *candidate = exti15_10_handlers[index];
+        if (candidate == fn) {
+            exti15_10_handlers[index] = 0;
             return;
         }
     }
-}
-
-static void extiHandler(IRQn_Type irqn)
-{
-    for (int index = 0; index < EXTI_CALLBACK_HANDLER_COUNT; index++) {
-        extiCallbackHandlerConfig_t *candidate = &extiHandlerConfigs[index];
-        if (candidate->fn && candidate->irqn == irqn) {
-            candidate->fn();
-        }
-    }
-
 }
 
 void EXTI15_10_IRQHandler(void)
 {
-    extiHandler(EXTI15_10_IRQn);
+    for (int index = 0; index < EXTI15_10_CALLBACK_HANDLER_COUNT; index++) {
+        extiCallbackHandler *fn = exti15_10_handlers[index];
+        if (!fn) {
+            continue;
+        }
+        fn();
+    }
 }
-
-#if defined(CC3D)
- void EXTI3_IRQHandler(void)
-{
-    extiHandler(EXTI3_IRQn);
-}
-#endif
-
-#if defined(COLIBRI_RACE) || defined(LUX_RACE)
-void EXTI9_5_IRQHandler(void)
-{
-    extiHandler(EXTI9_5_IRQn);
-}
-#endif
 
 // cycles per microsecond
 static uint32_t usTicks = 0;
@@ -124,12 +99,6 @@ uint32_t micros(void)
     do {
         ms = sysTickUptime;
         cycle_cnt = SysTick->VAL;
-
-        /*
-         * If the SysTick timer expired during the previous instruction, we need to give it a little time for that
-         * interrupt to be delivered before we can recheck sysTickUptime:
-         */
-        asm volatile("\tnop\n");
     } while (ms != sysTickUptime);
     return (ms * 1000) + (usTicks * 1000 - cycle_cnt) / usTicks;
 }
@@ -160,66 +129,21 @@ void systemInit(void)
     cachedRccCsrValue = RCC->CSR;
     RCC_ClearFlag();
 
+
     enableGPIOPowerUsageAndNoiseReductions();
 
+
 #ifdef STM32F10X
-    // Set USART1 TX (PA9) to output and high state to prevent a rs232 break condition on reset.
-    // See issue https://github.com/cleanflight/cleanflight/issues/1433
-    gpio_config_t gpio;
-
-    gpio.mode = Mode_Out_PP;
-    gpio.speed = Speed_2MHz;
-    gpio.pin = Pin_9;
-    digitalHi(GPIOA, gpio.pin);
-    gpioInit(GPIOA, &gpio);
-
-    // Set TX of USART2 and USART3 to input with pull-up to prevent floating TX outputs.
-    gpio.mode = Mode_IPU;
-
-#ifdef USE_USART2
-    gpio.pin = Pin_2;
-    gpioInit(GPIOA, &gpio);
-#endif
-
-#ifdef USE_USART3
-    gpio.pin = USART3_TX_PIN;
-    gpioInit(USART3_GPIO, &gpio);
-#endif
-
     // Turn off JTAG port 'cause we're using the GPIO for leds
 #define AFIO_MAPR_SWJ_CFG_NO_JTAG_SW            (0x2 << 24)
     AFIO->MAPR |= AFIO_MAPR_SWJ_CFG_NO_JTAG_SW;
-#endif
-
-#ifdef STM32F303
-    // Set TX for USART1, USART2 and USART3 to input with pull-up to prevent floating TX outputs.
-    gpio_config_t gpio;
-
-    gpio.mode = Mode_IPU;
-    gpio.speed = Speed_2MHz;
-
-#ifdef USE_USART1
-    gpio.pin = UART1_TX_PIN;
-    gpioInit(UART1_GPIO, &gpio);
-#endif
-
-//#ifdef USE_USART2
-//    gpio.pin = UART2_TX_PIN;
-//    gpioInit(UART2_GPIO, &gpio);
-//#endif
-
-#ifdef USE_USART3
-    gpio.pin = UART3_TX_PIN;
-    gpioInit(UART3_GPIO, &gpio);
-#endif
-
 #endif
 
     // Init cycle counter
     cycleCounterInit();
 
 
-    memset(extiHandlerConfigs, 0x00, sizeof(extiHandlerConfigs));
+    memset(&exti15_10_handlers, 0x00, sizeof(exti15_10_handlers));
     // SysTick
     SysTick_Config(SystemCoreClock / 1000);
 }
@@ -264,49 +188,21 @@ void delay(uint32_t ms)
         delayMicroseconds(1000);
 }
 
-#define SHORT_FLASH_DURATION 50
-#define CODE_FLASH_DURATION 250
-
-void failureMode(failureMode_e mode)
+// FIXME replace mode with an enum so usage can be tracked, currently mode is a magic number
+void failureMode(uint8_t mode)
 {
-    int codeRepeatsRemaining = 10;
-    int codeFlashesRemaining;
-    int shortFlashesRemaining;
+    uint8_t flashesRemaining = 10;
 
-    while (codeRepeatsRemaining--) {
-        LED1_ON;
-        LED0_OFF;
-        shortFlashesRemaining = 5;
-        codeFlashesRemaining = mode + 1;
-        uint8_t flashDuration = SHORT_FLASH_DURATION;
-
-        while (shortFlashesRemaining || codeFlashesRemaining) {
-            LED1_TOGGLE;
-            LED0_TOGGLE;
-            BEEP_ON;
-            delay(flashDuration);
-
-            LED1_TOGGLE;
-            LED0_TOGGLE;
-            BEEP_OFF;
-            delay(flashDuration);
-
-            if (shortFlashesRemaining) {
-                shortFlashesRemaining--;
-                if (shortFlashesRemaining == 0) {
-                    delay(500);
-                    flashDuration = CODE_FLASH_DURATION;
-                }
-            } else {
-                codeFlashesRemaining--;
-            }
-        }
-        delay(1000);
+    LED1_ON;
+    LED0_OFF;
+    while (flashesRemaining--) {
+        LED1_TOGGLE;
+        LED0_TOGGLE;
+        delay(475 * mode - 2);
+        BEEP_ON;
+        delay(25);
+        BEEP_OFF;
     }
 
-#ifdef DEBUG
-    systemReset();
-#else
     systemResetToBootloader();
-#endif
 }

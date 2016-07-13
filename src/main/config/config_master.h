@@ -27,14 +27,9 @@ typedef struct master_t {
     uint32_t enabledFeatures;
     uint16_t looptime;                      // imu loop time in us
     uint8_t emf_avoidance;                   // change pll settings to avoid noise in the uhf band
-    uint8_t i2c_highspeed;                  // Overclock i2c Bus for faster IMU readings
-    uint8_t gyroSync;                       // Enable interrupt based loop
-    uint8_t gyroSyncDenominator;            // Gyro sync Denominator
 
-    motorMixer_t customMotorMixer[MAX_SUPPORTED_MOTORS];
-#ifdef USE_SERVOS
-    servoMixer_t customServoMixer[MAX_SERVO_RULES];
-#endif
+    motorMixer_t customMixer[MAX_SUPPORTED_MOTORS]; // custom mixtable
+
     // motor/esc/servo related stuff
     escAndServoConfig_t escAndServoConfig;
     flight3DConfig_t flight3DConfig;
@@ -49,16 +44,13 @@ typedef struct master_t {
 
     int8_t yaw_control_direction;           // change control direction of yaw (inverted, normal)
     uint8_t acc_hardware;                   // Which acc hardware to use on boards with more than one device
-
-    uint16_t dcm_kp;                        // DCM filter proportional gain ( x 10000)
-    uint16_t dcm_ki;                        // DCM filter integral gain ( x 10000)
-    uint8_t gyro_lpf;                       // gyro LPF setting - values are driver specific, in case of invalid number, a reasonable default ~30-40HZ is chosen.
-    float soft_gyro_lpf_hz;                 // Software based gyro filter in hz
+    uint16_t gyro_lpf;                      // gyro LPF setting - values are driver specific, in case of invalid number, a reasonable default ~30-40HZ is chosen.
+    uint16_t gyro_cmpf_factor;              // Set the Gyro Weight for Gyro/Acc complementary filter. Increasing this value would reduce and delay Acc influence on the output of the filter.
+    uint16_t gyro_cmpfm_factor;             // Set the Gyro Weight for Gyro/Magnetometer complementary filter. Increasing this value would reduce and delay Magnetometer influence on the output of the filter
 
     gyroConfig_t gyroConfig;
 
     uint8_t mag_hardware;                   // Which mag hardware to use on boards with more than one device
-    uint8_t baro_hardware;                  // Barometer hardware to use
 
     uint16_t max_angle_inclination;         // max inclination allowed in angle (level) mode. default 500 (50 degrees).
     flightDynamicsTrims_t accZero;
@@ -87,17 +79,11 @@ typedef struct master_t {
 
     serialConfig_t serialConfig;
 
-#ifdef TELEMETRY
     telemetryConfig_t telemetryConfig;
-#endif
 
 #ifdef LED_STRIP
     ledConfig_t ledConfigs[MAX_LED_STRIP_LENGTH];
     hsvColor_t colors[CONFIGURABLE_COLOR_COUNT];
-#endif
-
-#ifdef TRANSPONDER
-    uint8_t transponderData[6];
 #endif
 
     profile_t profile[MAX_PROFILE_COUNT];

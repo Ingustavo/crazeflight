@@ -24,19 +24,18 @@
 extern "C" {
     #include "debug.h"
 
-    #include <platform.h>
+    #include "platform.h"
 
     #include "common/axis.h"
 
     #include "drivers/system.h"
     #include "drivers/serial.h"
 
-    #include "io/rc_controls.h"
-    #include "io/serial.h"
-    #include "io/gps.h"
-
     #include "sensors/sensors.h"
     #include "sensors/battery.h"
+
+    #include "io/serial.h"
+    #include "io/gps.h"
 
     #include "telemetry/telemetry.h"
     #include "telemetry/hott.h"
@@ -137,7 +136,7 @@ TEST(TelemetryHottTest, PrepareGPSMessage_Altitude1m)
 
     stateFlags = GPS_FIX;
     uint16_t altitudeInMeters = 1;
-    GPS_altitude = altitudeInMeters;
+    GPS_altitude = altitudeInMeters * (1 / 0.1f); // 1 = 0.1m
 
     // when
     hottPrepareGPSResponse(hottGPSMessage);
@@ -163,8 +162,8 @@ uint8_t GPS_numSat;
 int32_t GPS_coord[2];
 uint16_t GPS_speed;                 // speed in 0.1m/s
 uint16_t GPS_distanceToHome;        // distance to home point in meters
-uint16_t GPS_altitude;              // altitude in m
-uint16_t vbat;
+uint16_t GPS_altitude;              // altitude in 0.1m
+uint8_t vbat;
 int16_t GPS_directionToHome;        // direction to home or hol point in degrees
 
 int32_t amperage;
@@ -178,12 +177,7 @@ uint32_t millis(void) {
 
 uint32_t micros(void) { return 0; }
 
-uint8_t serialRxBytesWaiting(serialPort_t *instance) {
-    UNUSED(instance);
-    return 0;
-}
-
-uint8_t serialTxBytesFree(serialPort_t *instance) {
+uint8_t serialTotalBytesWaiting(serialPort_t *instance) {
     UNUSED(instance);
     return 0;
 }
@@ -236,10 +230,6 @@ bool telemetryDetermineEnabledState(portSharing_e) {
 
 portSharing_e determinePortSharing(serialPortConfig_t *, serialPortFunction_e) {
     return PORTSHARING_NOT_SHARED;
-}
-
-batteryState_e getBatteryState(void) {
-	return BATTERY_OK;
 }
 
 }

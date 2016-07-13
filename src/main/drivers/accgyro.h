@@ -17,13 +17,12 @@
 
 #pragma once
 
-extern uint16_t acc_1G; // FIXME move into acc_t
+extern uint16_t acc_1G;
 
 typedef struct gyro_s {
-    sensorGyroInitFuncPtr init;                             // initialize function
+    sensorInitFuncPtr init;                                 // initialize function
     sensorReadFuncPtr read;                                 // read 3 axis data function
     sensorReadFuncPtr temperature;                          // read temperature if available
-    sensorIsDataReadyFuncPtr isDataReady;                   // check if sensor has new readings
     float scale;                                            // scalefactor
 } gyro_t;
 

@@ -19,7 +19,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#include <platform.h>
+#include "platform.h"
 
 #if defined(USE_SOFTSERIAL1) || defined(USE_SOFTSERIAL2)
 
@@ -110,13 +110,7 @@ static void softSerialGPIOConfig(GPIO_TypeDef *gpio, uint16_t pin, GPIO_Mode mod
 
 void serialInputPortConfig(const timerHardware_t *timerHardwarePtr)
 {
-#ifdef STM32F10X
-    softSerialGPIOConfig(timerHardwarePtr->gpio, timerHardwarePtr->pin, Mode_IPU);
-#else
-#ifdef STM32F303xC
-    softSerialGPIOConfig(timerHardwarePtr->gpio, timerHardwarePtr->pin, Mode_AF_PP_PU);
-#endif
-#endif
+    softSerialGPIOConfig(timerHardwarePtr->gpio, timerHardwarePtr->pin, timerHardwarePtr->gpioInputMode);
 }
 
 static bool isTimerPeriodTooLarge(uint32_t timerPeriod)
@@ -409,7 +403,7 @@ void onSerialRxPinChange(timerCCHandlerRec_t *cbRec, captureCompare_t capture)
     }
 }
 
-uint8_t softSerialRxBytesWaiting(serialPort_t *instance)
+uint8_t softSerialTotalBytesWaiting(serialPort_t *instance)
 {
     if ((instance->mode & MODE_RX) == 0) {
         return 0;
@@ -420,19 +414,6 @@ uint8_t softSerialRxBytesWaiting(serialPort_t *instance)
     return (s->port.rxBufferHead - s->port.rxBufferTail) & (s->port.rxBufferSize - 1);
 }
 
-uint8_t softSerialTxBytesFree(serialPort_t *instance)
-{
-    if ((instance->mode & MODE_TX) == 0) {
-        return 0;
-    }
-
-    softSerial_t *s = (softSerial_t *)instance;
-
-    uint8_t bytesUsed = (s->port.txBufferHead - s->port.txBufferTail) & (s->port.txBufferSize - 1);
-
-    return (s->port.txBufferSize - 1) - bytesUsed;
-}
-
 uint8_t softSerialReadByte(serialPort_t *instance)
 {
     uint8_t ch;
@@ -441,7 +422,7 @@ uint8_t softSerialReadByte(serialPort_t *instance)
         return 0;
     }
 
-    if (softSerialRxBytesWaiting(instance) == 0) {
+    if (softSerialTotalBytesWaiting(instance) == 0) {
         return 0;
     }
 
@@ -479,13 +460,11 @@ bool isSoftSerialTransmitBufferEmpty(serialPort_t *instance)
 const struct serialPortVTable softSerialVTable[] = {
     {
         softSerialWriteByte,
-        softSerialRxBytesWaiting,
-        softSerialTxBytesFree,
+        softSerialTotalBytesWaiting,
         softSerialReadByte,
         softSerialSetBaudRate,
         isSoftSerialTransmitBufferEmpty,
         softSerialSetMode,
-        .writeBuf = NULL,
     }
 };
 

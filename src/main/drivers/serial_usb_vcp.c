@@ -20,10 +20,9 @@
 #include <stdbool.h>
 #include <string.h>
 
-#include <platform.h>
+#include "platform.h"
 
 #include "build_config.h"
-#include "common/utils.h"
 
 #include "usb_core.h"
 #include "usb_init.h"
@@ -39,7 +38,7 @@
 
 static vcpPort_t vcpPort;
 
-static void usbVcpSetBaudRate(serialPort_t *instance, uint32_t baudRate)
+void usbVcpSetBaudRate(serialPort_t *instance, uint32_t baudRate)
 {
     UNUSED(instance);
     UNUSED(baudRate);
@@ -47,7 +46,7 @@ static void usbVcpSetBaudRate(serialPort_t *instance, uint32_t baudRate)
     // TODO implement
 }
 
-static void usbVcpSetMode(serialPort_t *instance, portMode_t mode)
+void usbVcpSetMode(serialPort_t *instance, portMode_t mode)
 {
     UNUSED(instance);
     UNUSED(mode);
@@ -55,20 +54,20 @@ static void usbVcpSetMode(serialPort_t *instance, portMode_t mode)
     // TODO implement
 }
 
-static bool isUsbVcpTransmitBufferEmpty(serialPort_t *instance)
+bool isUsbVcpTransmitBufferEmpty(serialPort_t *instance)
 {
     UNUSED(instance);
     return true;
 }
 
-static uint8_t usbVcpAvailable(serialPort_t *instance)
+uint8_t usbVcpAvailable(serialPort_t *instance)
 {
     UNUSED(instance);
 
     return receiveLength & 0xFF; // FIXME use uint32_t return type everywhere
 }
 
-static uint8_t usbVcpRead(serialPort_t *instance)
+uint8_t usbVcpRead(serialPort_t *instance)
 {
     UNUSED(instance);
 
@@ -83,91 +82,24 @@ static uint8_t usbVcpRead(serialPort_t *instance)
     return buf[0];
 }
 
-static void usbVcpWriteBuf(serialPort_t *instance, void *data, int count)
+void usbVcpWrite(serialPort_t *instance, uint8_t c)
 {
     UNUSED(instance);
 
+    uint32_t txed;
+    uint32_t start = millis();
 
     if (!(usbIsConnected() && usbIsConfigured())) {
         return;
     }
 
-    uint32_t start = millis();
-    for (uint8_t *p = data; count > 0; ) {
-        uint32_t txed = CDC_Send_DATA(p, count);
-        count -= txed;
-        p += txed;
-
-        if (millis() - start > USB_TIMEOUT) {
-            break;
-        }
-    }
-}
-
-static bool usbVcpFlush(vcpPort_t *port)
-{
-    uint8_t count = port->txAt;
-    port->txAt = 0;
-
-    if (count == 0) {
-        return true;
-    }
-    if (!usbIsConnected() || !usbIsConfigured()) {
-        return false;
-    }
-    
-    uint32_t txed;
-    uint32_t start = millis();
-
     do {
-        txed = CDC_Send_DATA(port->txBuf, count);
-    } while (txed != count && (millis() - start < USB_TIMEOUT));
+        txed = CDC_Send_DATA((uint8_t*)&c, 1);
+    } while (txed < 1 && (millis() - start < USB_TIMEOUT));
 
-    return txed == count;
 }
 
-static void usbVcpWrite(serialPort_t *instance, uint8_t c)
-{
-    vcpPort_t *port = container_of(instance, vcpPort_t, port);
-
-    port->txBuf[port->txAt++] = c;
-    if (!port->buffering || port->txAt >= ARRAYLEN(port->txBuf)) {
-        usbVcpFlush(port);
-    }
-}
-
-static void usbVcpBeginWrite(serialPort_t *instance)
-{
-    vcpPort_t *port = container_of(instance, vcpPort_t, port);
-    port->buffering = true;
-}
-
-uint8_t usbTxBytesFree() {
-    // Because we block upon transmit and don't buffer bytes, our "buffer" capacity is effectively unlimited.
-    return 255;
-}
-
-static void usbVcpEndWrite(serialPort_t *instance)
-{
-    vcpPort_t *port = container_of(instance, vcpPort_t, port);
-    port->buffering = false;
-    usbVcpFlush(port);
-}
-
-static const struct serialPortVTable usbVTable[] = {
-    {
-        .serialWrite = usbVcpWrite,
-        .serialTotalRxWaiting = usbVcpAvailable,
-        .serialTotalTxFree = usbTxBytesFree,
-        .serialRead = usbVcpRead,
-        .serialSetBaudRate = usbVcpSetBaudRate,
-        .isSerialTransmitBufferEmpty = isUsbVcpTransmitBufferEmpty,
-        .setMode = usbVcpSetMode,
-        .beginWrite = usbVcpBeginWrite,
-        .endWrite = usbVcpEndWrite,
-        .writeBuf = usbVcpWriteBuf
-    }
-};
+const struct serialPortVTable usbVTable[] = { { usbVcpWrite, usbVcpAvailable, usbVcpRead, usbVcpSetBaudRate, isUsbVcpTransmitBufferEmpty, usbVcpSetMode } };
 
 serialPort_t *usbVcpOpen(void)
 {

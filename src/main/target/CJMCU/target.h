@@ -66,38 +66,13 @@
 #define BIND_PORT  GPIOA
 #define BIND_PIN   Pin_3
 
-#define NRF24_RX
-
-// v202 protocol @ 250kbps
-#define NRF24_PROVIDER NRF24RX_V202_250K
-
-#define USE_SPI
-#define USE_SPI_DEVICE_1
-
-#define NRF24_SPI_INSTANCE       SPI1
-#define USE_NRF24_SPI1
-
-#define NRF24_CE_GPIO   GPIOA
-#define NRF24_CE_PIN    GPIO_Pin_4
-#define NRF24_CE_GPIO_CLK_PERIPHERAL RCC_APB2Periph_GPIOA
-#define NRF24_CS_GPIO   GPIOA
-#define NRF24_CS_PIN    GPIO_Pin_11
-#define NRF24_CS_GPIO_CLK_PERIPHERAL RCC_APB2Periph_GPIOA
-#define NRF24_IRQ_GPIO   GPIOA
-#define NRF24_IRQ_PIN    GPIO_Pin_8
-#define NRF24_IRQ_GPIO_CLK_PERIPHERAL RCC_APB2Periph_GPIOA
-
 // Since the CJMCU PCB has holes for 4 motors in each corner we can save same flash space by disabling support for other mixers.
 #define USE_QUAD_MIXER_ONLY
 
 
 #if (FLASH_SIZE > 64)
 #define BLACKBOX
-#else
-#define SKIP_TASK_STATISTICS
-#define SKIP_CLI_COMMAND_HELP
 #endif
 
 //#undef USE_CLI
-//#define GTUNE
 //#define BLACKBOX

@@ -46,26 +46,13 @@
 #define INVERTER_PERIPHERAL RCC_APB2Periph_GPIOB
 #define INVERTER_USART USART2
 
-#define USE_SPI
-#define USE_SPI_DEVICE_2
+#define MPU6000_CS_GPIO       GPIOB
+#define MPU6000_CS_PIN        GPIO_Pin_12
+#define MPU6000_SPI_INSTANCE  SPI2
 
-#define PORT103R_SPI_INSTANCE     SPI2
-#define PORT103R_SPI_CS_GPIO      GPIOB
-#define PORT103R_SPI_CS_PIN       GPIO_Pin_12
-
-// We either have this 16mbit flash chip on SPI or the MPU6500 acc/gyro depending on board revision:
-#define M25P16_CS_GPIO        PORT103R_SPI_CS_GPIO
-#define M25P16_CS_PIN         PORT103R_SPI_CS_PIN
-#define M25P16_SPI_INSTANCE   PORT103R_SPI_INSTANCE
-
-#define MPU6000_CS_GPIO       PORT103R_SPI_CS_GPIO
-#define MPU6000_CS_PIN        PORT103R_SPI_CS_PIN
-#define MPU6000_SPI_INSTANCE  PORT103R_SPI_INSTANCE
-
-#define MPU6500_CS_GPIO       PORT103R_SPI_CS_GPIO
-#define MPU6500_CS_PIN        PORT103R_SPI_CS_PIN
-#define MPU6500_SPI_INSTANCE  PORT103R_SPI_INSTANCE
-#define MPU6500_CS_GPIO_CLK_PERIPHERAL   RCC_APB2Periph_GPIOB
+#define MPU6500_CS_GPIO       GPIOB
+#define MPU6500_CS_PIN        GPIO_Pin_12
+#define MPU6500_SPI_INSTANCE  SPI2
 
 #define GYRO
 #define USE_FAKE_GYRO
@@ -73,8 +60,8 @@
 //#define USE_GYRO_L3GD20
 //#define USE_GYRO_MPU3050
 #define USE_GYRO_MPU6050
-#define USE_GYRO_SPI_MPU6000
-#define USE_GYRO_SPI_MPU6500
+//#define USE_GYRO_SPI_MPU6000
+//#define USE_GYRO_SPI_MPU6500
 
 #define ACC
 #define USE_FAKE_ACC
@@ -82,8 +69,8 @@
 //#define USE_ACC_BMA280
 //#define USE_ACC_MMA8452
 #define USE_ACC_MPU6050
-#define USE_ACC_SPI_MPU6000
-#define USE_ACC_SPI_MPU6500
+//#define USE_ACC_SPI_MPU6000
+//#define USE_ACC_SPI_MPU6500
 
 #define BARO
 #define USE_BARO_MS5611
@@ -92,10 +79,6 @@
 #define MAG
 #define USE_MAG_HMC5883
 #define USE_MAG_AK8975
-
-#define USE_FLASHFS
-#define USE_FLASHTOOLS
-#define USE_FLASH_M25P16
 
 #define SONAR
 #define BEEPER
@@ -144,23 +127,13 @@
 #define EXTERNAL1_ADC_CHANNEL       ADC_Channel_5
 
 #define LED0
-
+#define GPS
 #define LED_STRIP
 #define LED_STRIP_TIMER TIM3
-#define WS2811_DMA_TC_FLAG           DMA1_FLAG_TC6
-#define WS2811_DMA_HANDLER_IDENTIFER DMA1_CH6_HANDLER
 
 #define BLACKBOX
-#define GPS
-#define GTUNE
-#define SERIAL_RX
 #define TELEMETRY
+#define SERIAL_RX
+#define AUTOTUNE
 #define USE_SERVOS
 #define USE_CLI
-
-#define USE_SERIAL_1WIRE
-
-#define S1W_TX_GPIO         GPIOA
-#define S1W_TX_PIN          GPIO_Pin_9
-#define S1W_RX_GPIO         GPIOA
-#define S1W_RX_PIN          GPIO_Pin_10

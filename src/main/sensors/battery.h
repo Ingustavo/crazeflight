@@ -17,9 +17,9 @@
 
 #pragma once
 
+#include "rx/rx.h"
+
 #define VBAT_SCALE_DEFAULT 110
-#define VBAT_RESDIVVAL_DEFAULT 10
-#define VBAT_RESDIVMULTIPLIER_DEFAULT 1
 #define VBAT_SCALE_MIN 0
 #define VBAT_SCALE_MAX 255
 
@@ -32,8 +32,6 @@ typedef enum {
 
 typedef struct batteryConfig_s {
     uint8_t vbatscale;                      // adjust this to match battery voltage to reported value
-    uint8_t vbatresdivval;                  // resistor divider R2 (default NAZE 10(K))
-    uint8_t vbatresdivmultiplier;           // multiplier for scale (e.g. 2.5:1 ratio with multiplier of 4 can use '100' instead of '25' in ratio) to get better precision
     uint8_t vbatmaxcellvoltage;             // maximum voltage per cell, used for auto-detecting battery voltage in 0.1V units, default is 43 (4.3V)
     uint8_t vbatmincellvoltage;             // minimum voltage per cell, this triggers battery critical alarm, in 0.1V units, default is 33 (3.3V)
     uint8_t vbatwarningcellvoltage;         // warning voltage per cell, this triggers battery warning alarm, in 0.1V units, default is 35 (3.5V)
@@ -50,12 +48,10 @@ typedef struct batteryConfig_s {
 typedef enum {
     BATTERY_OK = 0,
     BATTERY_WARNING,
-    BATTERY_CRITICAL,
-    BATTERY_NOT_PRESENT
+    BATTERY_CRITICAL
 } batteryState_e;
 
-extern uint16_t vbat;
-extern uint16_t vbatRaw;
+extern uint8_t vbat;
 extern uint16_t vbatLatestADC;
 extern uint8_t batteryCellCount;
 extern uint16_t batteryWarningVoltage;
@@ -64,12 +60,11 @@ extern int32_t amperage;
 extern int32_t mAhDrawn;
 
 uint16_t batteryAdcToVoltage(uint16_t src);
-batteryState_e getBatteryState(void);
-const  char * getBatteryStateString(void);
-void updateBattery(void);
+batteryState_e calculateBatteryState(void);
+void updateBatteryVoltage(void);
 void batteryInit(batteryConfig_t *initialBatteryConfig);
 
-void updateCurrentMeter(int32_t lastUpdateAt, throttleStatus_e throttleStatus);
+void updateCurrentMeter(int32_t lastUpdateAt, rxConfig_t *rxConfig, uint16_t deadband3d_throttle);
 int32_t currentMeterToCentiamps(uint16_t src);
 
 uint8_t calculateBatteryPercentage(void);

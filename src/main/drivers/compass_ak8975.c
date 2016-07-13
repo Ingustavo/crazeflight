@@ -22,7 +22,7 @@
 
 #include "build_config.h"
 
-#include <platform.h>
+#include "platform.h"
 
 #include "common/axis.h"
 #include "common/maths.h"
@@ -111,7 +111,7 @@ void ak8975Init()
 #define BIT_STATUS2_REG_DATA_ERROR              (1 << 2)
 #define BIT_STATUS2_REG_MAG_SENSOR_OVERFLOW     (1 << 3)
 
-bool ak8975Read(int16_t *magData)
+void ak8975Read(int16_t *magData)
 {
     bool ack;
     UNUSED(ack);
@@ -120,7 +120,7 @@ bool ak8975Read(int16_t *magData)
 
     ack = i2cRead(AK8975_MAG_I2C_ADDRESS, AK8975_MAG_REG_STATUS1, 1, &status);
     if (!ack || (status & BIT_STATUS1_REG_DATA_READY) == 0) {
-        return false;
+        return;
     }
 
 #if 1 // USE_I2C_SINGLE_BYTE_READS
@@ -129,22 +129,22 @@ bool ak8975Read(int16_t *magData)
     for (uint8_t i = 0; i < 6; i++) {
         ack = i2cRead(AK8975_MAG_I2C_ADDRESS, AK8975_MAG_REG_HXL + i, 1, &buf[i]); // read from AK8975_MAG_REG_HXL to AK8975_MAG_REG_HZH
         if (!ack) {
-            return false
+            break;
         }
     }
 #endif
 
     ack = i2cRead(AK8975_MAG_I2C_ADDRESS, AK8975_MAG_REG_STATUS2, 1, &status);
     if (!ack) {
-        return false;
+        return;
     }
 
     if (status & BIT_STATUS2_REG_DATA_ERROR) {
-        return false;
+        return;
     }
 
     if (status & BIT_STATUS2_REG_MAG_SENSOR_OVERFLOW) {
-        return false;
+        return;
     }
 
     magData[X] = -(int16_t)(buf[1] << 8 | buf[0]) * 4;
@@ -153,5 +153,4 @@ bool ak8975Read(int16_t *magData)
 
 
     ack = i2cWrite(AK8975_MAG_I2C_ADDRESS, AK8975_MAG_REG_CNTL, 0x01); // start reading again
-    return true;
 }

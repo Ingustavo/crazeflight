@@ -19,8 +19,7 @@
 #include <stdint.h>
 #include <math.h>
 
-#include <platform.h>
-#include "scheduler.h"
+#include "platform.h"
 
 #include "common/maths.h"
 
@@ -113,7 +112,8 @@ static uint32_t recalculateBarometerTotal(uint8_t baroSampleCount, uint32_t pres
 
 typedef enum {
     BAROMETER_NEEDS_SAMPLES = 0,
-    BAROMETER_NEEDS_CALCULATION
+    BAROMETER_NEEDS_CALCULATION,
+    BAROMETER_NEEDS_PROCESSING
 } barometerState_e;
 
 
@@ -121,28 +121,37 @@ bool isBaroReady(void) {
 	return baroReady;
 }
 
-uint32_t baroUpdate(void)
+void baroUpdate(uint32_t currentTime)
 {
+    static uint32_t baroDeadline = 0;
     static barometerState_e state = BAROMETER_NEEDS_SAMPLES;
 
+    if ((int32_t)(currentTime - baroDeadline) < 0)
+        return;
+
+    baroDeadline = 0;
     switch (state) {
-        default:
         case BAROMETER_NEEDS_SAMPLES:
             baro.get_ut();
             baro.start_up();
             state = BAROMETER_NEEDS_CALCULATION;
-            return baro.up_delay;
+            baroDeadline += baro.up_delay;
         break;
 
         case BAROMETER_NEEDS_CALCULATION:
             baro.get_up();
             baro.start_ut();
+            baroDeadline += baro.ut_delay;
             baro.calculate(&baroPressure, &baroTemperature);
-            baroPressureSum = recalculateBarometerTotal(barometerConfig->baro_sample_count, baroPressureSum, baroPressure);
+            state = BAROMETER_NEEDS_PROCESSING;
+        break;
+
+        case BAROMETER_NEEDS_PROCESSING:
             state = BAROMETER_NEEDS_SAMPLES;
-            return baro.ut_delay;
+            baroPressureSum = recalculateBarometerTotal(barometerConfig->baro_sample_count, baroPressureSum, baroPressure);
         break;
     }
+    baroDeadline += micros();        // make sure deadline is set after calling baro callbacks
 }
 
 int32_t baroCalculateAltitude(void)

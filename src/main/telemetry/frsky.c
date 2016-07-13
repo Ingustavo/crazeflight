@@ -23,7 +23,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#include <platform.h>
+#include "platform.h"
 
 #ifdef TELEMETRY
 
@@ -37,7 +37,6 @@
 #include "drivers/timer.h"
 #include "drivers/serial.h"
 
-#include "io/rc_controls.h"
 
 #include "sensors/sensors.h"
 #include "sensors/acceleration.h"
@@ -46,7 +45,10 @@
 #include "sensors/battery.h"
 
 #include "io/serial.h"
+#include "io/rc_controls.h"
 #include "io/gps.h"
+
+#include "rx/rx.h"
 
 #include "flight/mixer.h"
 #include "flight/pid.h"
@@ -243,7 +245,7 @@ static void sendSpeed(void)
     //Speed should be sent in knots (GPS speed is in cm/s)
     sendDataHead(ID_GPS_SPEED_BP);
     //convert to knots: 1cm/s = 0.0194384449 knots
-    serialize16(GPS_speed * 1944 / 100000);
+    serialize16(GPS_speed * 1944 / 10000);
     sendDataHead(ID_GPS_SPEED_AP);
     serialize16((GPS_speed * 1944 / 100) % 100);
 }
@@ -300,18 +302,16 @@ static void sendLatLong(int32_t coord[2])
     serialize16(coord[LON] < 0 ? 'W' : 'E');
 }
 
-#ifdef GPS
 static void sendFakeLatLong(void)
 {
     // Heading is only displayed on OpenTX if non-zero lat/long is also sent
     int32_t coord[2] = {0,0};
-
+    
     coord[LAT] = (telemetryConfig->gpsNoFixLatitude * GPS_DEGREES_DIVIDER);
     coord[LON] = (telemetryConfig->gpsNoFixLongitude * GPS_DEGREES_DIVIDER);
 
     sendLatLong(coord);
 }
-#endif
 
 static void sendFakeLatLongThatAllowsHeadingDisplay(void)
 {
@@ -432,7 +432,7 @@ static void sendFuelLevel(void)
 static void sendHeading(void)
 {
     sendDataHead(ID_COURSE_BP);
-    serialize16(DECIDEGREES_TO_DEGREES(attitude.values.yaw));
+    serialize16(heading);
     sendDataHead(ID_COURSE_AP);
     serialize16(0);
 }

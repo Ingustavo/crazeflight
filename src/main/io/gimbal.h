@@ -17,13 +17,12 @@
 
 #pragma once
 
-typedef enum {
-    GIMBAL_MODE_NORMAL = 0,
-    GIMBAL_MODE_MIXTILT = 1
-} gimbalMode_e;
-
-#define GIMBAL_MODE_MAX (GIMBAL_MODE_MIXTILT)
+typedef enum GimbalFlags {
+    GIMBAL_NORMAL = 1 << 0,
+    GIMBAL_MIXTILT = 1 << 1,
+    GIMBAL_FORWARDAUX = 1 << 2,
+} GimbalFlags;
 
 typedef struct gimbalConfig_s {
-    uint8_t mode;
+    uint8_t gimbal_flags;                   // in servotilt mode, various things that affect stuff
 } gimbalConfig_t;
